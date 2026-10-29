@@ -5,6 +5,7 @@ Ces fichiers sont des supports à compléter au fur et à mesure du développeme
 - [Architecture et diagrammes](architecture.md)
 - [Conception et pratiques de développement](conception.md)
 - [Tests et couverture](tests.md)
+- [Outils et commandes de test](outils.md)
 - [Recommandation et apprentissage automatique](recommandation.md)
 - [Bilan de la démarche](bilan.md)
 
