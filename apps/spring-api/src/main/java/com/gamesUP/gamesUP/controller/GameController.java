@@ -3,6 +3,7 @@ package com.gamesUP.gamesUP.controller;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.sql.DataSource;
 
 import org.springframework.web.bind.annotation.*;
 
@@ -10,14 +11,16 @@ import com.gamesUP.gamesUP.model.Game;
 
 public class GameController {
 
-    private String jdbcUrl = "jdbc:mysql://localhost:3306/gameUP";
-    private String username = "root";
-    private String password = "password";
+    private final DataSource dataSource;
+
+    public GameController(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     @GetMapping
     public List<Game> getAllJeux() {
         List<Game> jeux = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = dataSource.getConnection();
              Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM jeux")) {
 
@@ -36,7 +39,7 @@ public class GameController {
 
     @PostMapping
     public void ajouterJeu(@RequestBody Game game) {
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement("INSERT INTO jeux (nom, auteur) VALUES (?, ?)")) {
 
             stmt.setString(1, game.nom);
