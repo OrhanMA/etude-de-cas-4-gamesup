@@ -36,7 +36,7 @@ java -version
 
 ### Vérifier l'encodage de la configuration
 
-Le fichier `src/main/resources/application.properties` contient actuellement des commentaires encodés en Windows-1252. Le traitement Maven attend de l'UTF-8 et échoue tant que le fichier n'est pas converti. Les résultats ci-dessous ont été obtenus après conversion en UTF-8 dans une copie temporaire, sans modifier les valeurs de configuration. Pour vérifier le traitement des ressources après correction :
+Le fichier `src/main/resources/application.properties` est encodé en UTF-8, comme attendu par Maven. Le fichier `.editorconfig` indique UTF-8 pour les fichiers `.properties` ; il ne convertit pas les fichiers existants. Pour vérifier le traitement des ressources :
 
 ```bash
 ./mvnw process-resources
@@ -190,3 +190,5 @@ Le 29 octobre 2026 sur macOS, une première exécution de `./mvnw clean test` a 
 Avant l'ajout du contrôleur, deux vérifications temporaires avec MockMvc ont aussi confirmé que la sécurité Spring par défaut refuse une requête anonyme et laisse passer un utilisateur simulé jusqu'à une route inexistante. Elles ne valident pas une connexion réelle ni les rôles métier.
 
 Après l'ajout du contrôleur et des relations, `./mvnw clean verify` a réussi dans une copie temporaire du module dont la configuration avait été convertie en UTF-8 : huit tests sont passés et le rapport JaCoCo compte 21 lignes couvertes sur 29, soit **72,4 %**. Les cinq tests du contrôleur utilisent MockMvc et un repository simulé ; le test des relations utilise H2 en mémoire. La connexion MySQL seule ne valide pas le schéma ni les parcours métier, et les règles de sécurité propres aux rôles restent à tester. Pour Angular, deux tests ont réussi lors de la vérification précédente du même jour.
+
+Le 30 octobre, après conversion du fichier de configuration dans le dossier de travail, `./mvnw clean verify` a réussi sur macOS avec Java 21 : huit tests sont passés et le contrôle JaCoCo a réussi.

@@ -2,23 +2,26 @@ package com.gamesUP.gamesUP.controller;
 
 import java.util.List;
 
-import com.gamesUP.gamesUP.model.Author;
-import com.gamesUP.gamesUP.model.Game;
-import com.gamesUP.gamesUP.model.Publisher;
-import com.gamesUP.gamesUP.repository.GameRepository;
+import com.gamesUP.gamesUP.dto.AuthorDto;
+import com.gamesUP.gamesUP.dto.CreateGameDto;
+import com.gamesUP.gamesUP.dto.GameDto;
+import com.gamesUP.gamesUP.dto.PublisherDto;
+import com.gamesUP.gamesUP.service.GameService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,27 +35,14 @@ class GameControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private GameRepository gameRepository;
+    private GameService gameService;
 
     @Test
     @WithMockUser
     void retourneLesJeuxDuCatalogue() throws Exception {
-        Game game = new Game();
-        game.id = 1L;
-        game.name = "Catan";
-        game.genre = "Stratégie";
-        game.editionNumber = 1;
-        Author author = new Author();
-        author.id = 2L;
-        author.name = "Auteur";
-        author.games.add(game);
-        game.author = author;
-        Publisher publisher = new Publisher();
-        publisher.id = 3L;
-        publisher.name = "Éditeur";
-        publisher.games.add(game);
-        game.publisher = publisher;
-        when(gameRepository.findAll()).thenReturn(List.of(game));
+        GameDto game = new GameDto(1L, "Catan", "Stratégie", 1,
+                new AuthorDto(2L, "Auteur"), new PublisherDto(3L, "Éditeur"));
+        when(gameService.getAllGames()).thenReturn(List.of(game));
 
         mockMvc.perform(get("/games"))
                 .andExpect(status().isOk())
@@ -83,7 +73,7 @@ class GameControllerTest {
                                 """))
                 .andExpect(status().isOk());
 
-        verify(gameRepository).save(any(Game.class));
+        verify(gameService).addGame(new CreateGameDto("Catan", "Stratégie", 1, null, null));
     }
 
     @Test
@@ -97,7 +87,36 @@ class GameControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(gameRepository);
+        verifyNoInteractions(gameService);
+    }
+
+    @Test
+    @WithMockUser
+    void rejetteUnIdentifiantAuteurInvalide() throws Exception {
+        mockMvc.perform(post("/games")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"authorId":0}
+                                """))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(gameService);
+    }
+
+    @Test
+    @WithMockUser
+    void rejetteUnAuteurInexistant() throws Exception {
+        CreateGameDto request = new CreateGameDto("Catan", "Stratégie", 1, 2L, null);
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Auteur introuvable"))
+                .when(gameService).addGame(request);
+
+        mockMvc.perform(post("/games")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"authorId":2}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -110,6 +129,6 @@ class GameControllerTest {
                                 """))
                 .andExpect(status().isForbidden());
 
-        verifyNoInteractions(gameRepository);
+        verifyNoInteractions(gameService);
     }
 }

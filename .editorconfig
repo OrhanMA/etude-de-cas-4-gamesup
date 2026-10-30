@@ -1,0 +1,4 @@
+application.propertiesroot = true
+
+[*.properties]
+charset = utf-8
