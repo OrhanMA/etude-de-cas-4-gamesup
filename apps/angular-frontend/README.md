@@ -4,13 +4,15 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Development server
 
-To start a local development server, run:
+Start the Spring API on `http://localhost:8080`, then start Angular from this directory:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200/`. The development proxy forwards `/api` and `/games` requests to Spring, so the browser uses the same origin and does not need a separate CORS configuration. The access token is held in memory and is cleared when the page reloads or when you sign out.
+
+The frontend provides `/register`, `/login`, and a protected `/catalog` page. In production, configure the hosting server to forward `/api` and `/games` to the Spring API as well.
 
 ## Code scaffolding
 
