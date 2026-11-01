@@ -1,8 +1,6 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI
 from .recommendation import generate_recommendations
-from .models import UserData
+from .models import RecommendationResponse, UserData
 
 app = FastAPI()
 
@@ -12,10 +10,6 @@ async def root():
     return {"message": "API de recommandation en ligne"}
 
 # Endpoint pour envoyer les données d'utilisateur et récupérer des recommandations
-@app.post("/recommendations/")
+@app.post("/recommendations/", response_model=RecommendationResponse)
 async def get_recommendations(data: UserData):
-    try:
-        recommendations = generate_recommendations(data)
-        return {"recommendations": recommendations}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return generate_recommendations(data)
