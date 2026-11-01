@@ -1,9 +1,15 @@
 package com.gamesUP.gamesUP.controller;
 
 import com.gamesUP.gamesUP.model.Game;
+import com.gamesUP.gamesUP.model.Author;
+import com.gamesUP.gamesUP.model.Order;
+import com.gamesUP.gamesUP.model.Publisher;
 import com.gamesUP.gamesUP.model.Role;
 import com.gamesUP.gamesUP.model.User;
+import com.gamesUP.gamesUP.repository.AuthorRepository;
 import com.gamesUP.gamesUP.repository.GameRepository;
+import com.gamesUP.gamesUP.repository.OrderRepository;
+import com.gamesUP.gamesUP.repository.PublisherRepository;
 import com.gamesUP.gamesUP.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
@@ -17,6 +23,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -48,6 +56,15 @@ class AuthFlowIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AuthorRepository authorRepository;
+
+    @Autowired
+    private PublisherRepository publisherRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -240,6 +257,182 @@ class AuthFlowIntegrationTest {
         mockMvc.perform(delete("/games/{id}", Long.MAX_VALUE)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void unAdministrateurPeutGererLesAuteursEtUnUtilisateurNePeutPasLesModifier() throws Exception {
+        String userToken = registerAndLogin("user.authors@example.test", Role.ROLE_USER);
+        mockMvc.perform(post("/authors")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Auteur refusé\"}"))
+                .andExpect(status().isForbidden());
+
+        String adminToken = registerAndLogin("admin.authors@example.test", Role.ROLE_ADMIN);
+        MvcResult created = mockMvc.perform(post("/authors")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Auteur test\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Auteur test"))
+                .andReturn();
+        Number authorId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        Long id = authorId.longValue();
+
+        mockMvc.perform(put("/authors/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Auteur modifié\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/authors/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Auteur modifié"));
+        mockMvc.perform(delete("/authors/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void unAdministrateurPeutGererLesEditeurs() throws Exception {
+        String adminToken = registerAndLogin("admin.publishers@example.test", Role.ROLE_ADMIN);
+        MvcResult created = mockMvc.perform(post("/publishers")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Éditeur test\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Number publisherId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        Long id = publisherId.longValue();
+
+        mockMvc.perform(put("/publishers/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Éditeur modifié\"}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/publishers/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Éditeur modifié"));
+        mockMvc.perform(delete("/publishers/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void lesClientsEtCommandesSontConsultablesParUnAdministrateurUniquement() throws Exception {
+        String adminToken = registerAndLogin("admin.read@example.test", Role.ROLE_ADMIN);
+        User admin = userRepository.findByEmailIgnoreCase("admin.read@example.test").orElseThrow();
+        Order order = new Order();
+        order.user = admin;
+        order.createdAt = new Date();
+        Order savedOrder = orderRepository.save(order);
+
+        mockMvc.perform(get("/api/users")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist());
+        mockMvc.perform(get("/api/orders/{id}", savedOrder.id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(savedOrder.id))
+                .andExpect(jsonPath("$.user.email").value("admin.read@example.test"));
+
+        String userToken = registerAndLogin("user.read@example.test", Role.ROLE_USER);
+        mockMvc.perform(get("/api/users")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/orders")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void unAdministrateurPeutMettreAJourEtSupprimerUnClientSansCommandes() throws Exception {
+        registerAndLogin("client.manage@example.test", Role.ROLE_USER);
+        User client = userRepository.findByEmailIgnoreCase("client.manage@example.test").orElseThrow();
+        String adminToken = registerAndLogin("admin.clients@example.test", Role.ROLE_ADMIN);
+
+        mockMvc.perform(put("/api/users/{id}", client.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Client renommé","email":"client.renamed@example.test"}
+                                """))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/users/{id}", client.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("client.renamed@example.test"));
+        mockMvc.perform(delete("/api/users/{id}", client.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void unAdministrateurPeutCreerModifierEtSupprimerUneCommandeNonPayee() throws Exception {
+        registerAndLogin("order.owner@example.test", Role.ROLE_USER);
+        User owner = userRepository.findByEmailIgnoreCase("order.owner@example.test").orElseThrow();
+        String adminToken = registerAndLogin("admin.orders@example.test", Role.ROLE_ADMIN);
+        Game game = createGame();
+        String createOrderJson = """
+                {"userId":%d,"lines":[{"gameId":%d,"quantity":2,"unitPrice":12.50}]}
+                """.formatted(owner.getId(), game.id);
+
+        MvcResult created = mockMvc.perform(post("/api/orders")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createOrderJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.lines[0].quantity").value(2))
+                .andReturn();
+        Number orderId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        Long id = orderId.longValue();
+
+        mockMvc.perform(put("/api/orders/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"paid\":true,\"delivered\":false,\"archived\":false,"
+                                + "\"lines\":[{\"gameId\":" + game.id
+                                + ",\"quantity\":3,\"unitPrice\":12.50}]}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/orders/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lines[0].quantity").value(3));
+        mockMvc.perform(delete("/api/orders/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isConflict());
+
+        Order removableOrder = new Order();
+        removableOrder.user = owner;
+        removableOrder.createdAt = new Date();
+        Order savedRemovableOrder = orderRepository.save(removableOrder);
+        mockMvc.perform(delete("/api/orders/{id}", savedRemovableOrder.id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void refuseDeSupprimerUnAuteurOuEditeurLieAUnJeu() throws Exception {
+        Author author = new Author();
+        author.name = "Auteur lié";
+        author = authorRepository.save(author);
+        Publisher publisher = new Publisher();
+        publisher.name = "Éditeur lié";
+        publisher = publisherRepository.save(publisher);
+        Game game = createGame();
+        game.author = author;
+        game.publisher = publisher;
+        gameRepository.save(game);
+        String adminToken = registerAndLogin("admin.references@example.test", Role.ROLE_ADMIN);
+
+        mockMvc.perform(delete("/authors/{id}", author.id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isConflict());
+        mockMvc.perform(delete("/publishers/{id}", publisher.id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isConflict());
     }
 
     private Game createGame() {

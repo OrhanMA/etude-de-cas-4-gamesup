@@ -1,6 +1,7 @@
 package com.gamesUP.gamesUP.dto;
 
 import java.util.Date;
+import java.util.List;
 
 public record OrderDto(
         Long id,
@@ -8,5 +9,6 @@ public record OrderDto(
         Date createdAt,
         boolean paid,
         boolean delivered,
-        boolean archived
+        boolean archived,
+        List<OrderLineDto> lines
 ) {}
