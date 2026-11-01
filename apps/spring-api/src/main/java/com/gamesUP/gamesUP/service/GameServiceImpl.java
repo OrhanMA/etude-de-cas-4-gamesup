@@ -53,6 +53,45 @@ public class GameServiceImpl implements GameService {
                 .toList();
     }
 
+    @Override
+    public GameDto getGameById(Long id) {
+        return gameRepository.findById(id)
+                .map(this::toDto)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jeu introuvable"));
+    }
+
+    @Override
+    public List<GameDto> searchGames(String query) {
+        if (query == null || query.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le terme de recherche est obligatoire");
+        }
+
+        String term = query.trim();
+        return gameRepository.findByNameContainingIgnoreCaseOrGenreContainingIgnoreCase(term, term).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Override
+    public void updateGame(Long id, CreateGameDto gameDto) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jeu introuvable"));
+
+        game.name = gameDto.name();
+        game.genre = gameDto.genre();
+        game.editionNumber = gameDto.editionNumber();
+        game.author = gameDto.authorId() == null
+                ? null
+                : authorRepository.findById(gameDto.authorId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Auteur introuvable"));
+        game.publisher = gameDto.publisherId() == null
+                ? null
+                : publisherRepository.findById(gameDto.publisherId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Éditeur introuvable"));
+
+        gameRepository.save(game);
+    }
+
     private GameDto toDto(Game game) {
         AuthorDto author = game.author == null
                 ? null
@@ -62,5 +101,12 @@ public class GameServiceImpl implements GameService {
                 : new PublisherDto(game.publisher.id, game.publisher.name);
 
         return new GameDto(game.id, game.name, game.genre, game.editionNumber, author, publisher);
+    }
+
+    @Override
+    public void deleteGame(Long id) throws ResponseStatusException {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Jeu introuvable"));
+        gameRepository.delete(game);
     }
 }

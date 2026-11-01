@@ -72,6 +72,12 @@ public class AuthServiceImpl implements AuthService {
                 .subject(authentication.getName())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
+                .claim(
+                        "roles",
+                        authentication.getAuthorities().stream()
+                                .map(authority -> authority.getAuthority())
+                                .toList()
+                )
                 .build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();

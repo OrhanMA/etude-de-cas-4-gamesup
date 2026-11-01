@@ -63,7 +63,7 @@ class GameControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void enregistreUnJeuValide() throws Exception {
         mockMvc.perform(post("/games")
                         .with(csrf())
@@ -77,7 +77,7 @@ class GameControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void rejetteUnJeuInvalideSansEnregistrement() throws Exception {
         mockMvc.perform(post("/games")
                         .with(csrf())
@@ -91,7 +91,7 @@ class GameControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void rejetteUnIdentifiantAuteurInvalide() throws Exception {
         mockMvc.perform(post("/games")
                         .with(csrf())
@@ -104,7 +104,7 @@ class GameControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void rejetteUnAuteurInexistant() throws Exception {
         CreateGameDto request = new CreateGameDto("Catan", "Stratégie", 1, 2L, null);
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Auteur introuvable"))
