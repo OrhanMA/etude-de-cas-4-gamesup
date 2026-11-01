@@ -5,7 +5,9 @@ import { catchError, throwError } from 'rxjs';
 import { AuthApiService } from './auth-api.service';
 
 function isApiRequest(url: string): boolean {
-  return url.startsWith('/api/') || url === '/games' || url.startsWith('/games/');
+  return ['/api/', '/games', '/authors', '/publishers'].some((prefix) =>
+    url.startsWith(prefix === '/api/' ? prefix : `${prefix}/`) || url === prefix,
+  );
 }
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {

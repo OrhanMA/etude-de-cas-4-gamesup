@@ -10,7 +10,9 @@ import java.util.List;
 public interface OrderService {
     List<OrderDto> getAllOrders();
     OrderDto getOrder(Long id) throws ResponseStatusException;
-    OrderDto createOrder(CreateOrderRequest request) throws ResponseStatusException;
+    List<OrderDto> getMyOrders(String email);
+    OrderDto getMyOrder(Long id, String email) throws ResponseStatusException;
+    OrderDto createOrder(String email, CreateOrderRequest request) throws ResponseStatusException;
     void updateOrder(Long id, UpdateOrderRequest request) throws ResponseStatusException;
     void deleteOrder(Long id) throws ResponseStatusException;
 }

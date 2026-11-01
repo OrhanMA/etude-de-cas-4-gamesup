@@ -12,7 +12,7 @@ npm start
 
 Open `http://localhost:4200/`. The development proxy forwards `/api` and `/games` requests to Spring, so the browser uses the same origin and does not need a separate CORS configuration. The access token is held in memory and is cleared when the page reloads or when you sign out.
 
-The frontend provides `/register`, `/login`, and a protected `/catalog` page. In production, configure the hosting server to forward `/api` and `/games` to the Spring API as well.
+The client area provides `/register`, `/login`, a searchable `/catalog`, game details, and `/orders`. The protected `/admin` area provides game, client, order, author, and publisher management. Admin screens are guarded in Angular for navigation and protected again by Spring Security on the API. In production, configure the hosting server to forward `/api`, `/games`, `/authors`, and `/publishers` to Spring.
 
 ## Code scaffolding
 

@@ -39,6 +39,13 @@ describe('authInterceptor', () => {
 
     expect(request.request.headers.get('Authorization')).toBe('Bearer signed.jwt.token');
     request.flush([]);
+
+    for (const url of ['/authors', '/authors/2', '/publishers', '/publishers/3']) {
+      http.get(url).subscribe();
+      const protectedRequest = httpTestingController.expectOne(url);
+      expect(protectedRequest.request.headers.get('Authorization')).toBe('Bearer signed.jwt.token');
+      protectedRequest.flush([]);
+    }
   });
 
   it('does not attach authorization to requests outside the API', () => {

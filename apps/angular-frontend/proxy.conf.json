@@ -6,5 +6,13 @@
   "/games": {
     "target": "http://localhost:8080",
     "secure": false
+  },
+  "/authors": {
+    "target": "http://localhost:8080",
+    "secure": false
+  },
+  "/publishers": {
+    "target": "http://localhost:8080",
+    "secure": false
   }
 }

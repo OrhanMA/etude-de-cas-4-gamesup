@@ -1,3 +1,8 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import "tailwindcss";
+@import "@angular/material/prebuilt-themes/azure-blue.css";
+
+html, body { min-height: 100%; }
+body { margin: 0; color: #17212b; background: #f5f6fa; font-family: Roboto, "Helvetica Neue", sans-serif; }
+*, *::before, *::after { box-sizing: border-box; }

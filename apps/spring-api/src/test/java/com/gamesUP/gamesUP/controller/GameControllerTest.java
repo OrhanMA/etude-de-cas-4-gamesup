@@ -1,6 +1,7 @@
 package com.gamesUP.gamesUP.controller;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 import com.gamesUP.gamesUP.dto.AuthorDto;
 import com.gamesUP.gamesUP.dto.CreateGameDto;
@@ -40,7 +41,7 @@ class GameControllerTest {
     @Test
     @WithMockUser
     void retourneLesJeuxDuCatalogue() throws Exception {
-        GameDto game = new GameDto(1L, "Catan", "Stratégie", 1,
+        GameDto game = new GameDto(1L, "Catan", "Stratégie", 1, new BigDecimal("29.90"),
                 new AuthorDto(2L, "Auteur"), new PublisherDto(3L, "Éditeur"));
         when(gameService.getAllGames()).thenReturn(List.of(game));
 
@@ -69,11 +70,11 @@ class GameControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Catan","genre":"Stratégie","editionNumber":1}
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"price":29.90}
                                 """))
                 .andExpect(status().isOk());
 
-        verify(gameService).addGame(new CreateGameDto("Catan", "Stratégie", 1, null, null));
+        verify(gameService).addGame(new CreateGameDto("Catan", "Stratégie", 1, new BigDecimal("29.90"), null, null));
     }
 
     @Test
@@ -83,7 +84,7 @@ class GameControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"","genre":"Stratégie","editionNumber":1}
+                                {"name":"","genre":"Stratégie","editionNumber":1,"price":29.90}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -97,7 +98,7 @@ class GameControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"authorId":0}
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"price":29.90,"authorId":0}
                                 """))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(gameService);
@@ -106,7 +107,7 @@ class GameControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void rejetteUnAuteurInexistant() throws Exception {
-        CreateGameDto request = new CreateGameDto("Catan", "Stratégie", 1, 2L, null);
+        CreateGameDto request = new CreateGameDto("Catan", "Stratégie", 1, new BigDecimal("29.90"), 2L, null);
         doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Auteur introuvable"))
                 .when(gameService).addGame(request);
 
@@ -114,7 +115,7 @@ class GameControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"authorId":2}
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"price":29.90,"authorId":2}
                                 """))
                 .andExpect(status().isBadRequest());
     }
@@ -125,7 +126,7 @@ class GameControllerTest {
         mockMvc.perform(post("/games")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Catan","genre":"Stratégie","editionNumber":1}
+                                {"name":"Catan","genre":"Stratégie","editionNumber":1,"price":29.90}
                                 """))
                 .andExpect(status().isForbidden());
 

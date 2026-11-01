@@ -40,4 +40,20 @@ export class AuthApiService {
   isAuthenticated(): boolean {
     return this.tokenState() !== null;
   }
+
+  isAdmin(): boolean {
+    const token = this.tokenState();
+    if (!token) return false;
+
+    try {
+      const encodedPayload = token.split('.')[1];
+      if (!encodedPayload) return false;
+      const base64 = encodedPayload.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+      const payload = JSON.parse(atob(paddedBase64)) as { roles?: unknown };
+      return Array.isArray(payload.roles) && payload.roles.some((role: unknown) => role === 'ROLE_ADMIN');
+    } catch {
+      return false;
+    }
+  }
 }

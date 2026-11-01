@@ -1,23 +1,26 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs';
 import { AuthApiService } from './auth-api.service';
 
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, RouterLink],
   template: `
     <main class="auth-layout">
-      <section class="auth-card" aria-labelledby="register-title">
+      <mat-card class="auth-card" aria-labelledby="register-title"><mat-card-content>
         <a class="brand" routerLink="/login">GamesUP</a>
         <p class="eyebrow">Rejoins la communauté</p>
         <h1 id="register-title">Créer un compte</h1>
         <p class="intro">Quelques informations suffisent pour commencer.</p>
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label for="name">Nom</label>
-          <input
+          <mat-form-field appearance="outline"><mat-label>Nom</mat-label><input matInput
             id="name"
             type="text"
             autocomplete="name"
@@ -25,13 +28,12 @@ import { AuthApiService } from './auth-api.service';
             [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
             [attr.aria-describedby]="form.controls.name.touched && form.controls.name.invalid ? 'name-error' : null"
             required
-          />
+          /></mat-form-field>
           @if (form.controls.name.touched && form.controls.name.invalid) {
             <p class="field-error" id="name-error">Le nom est obligatoire.</p>
           }
 
-          <label for="email">Adresse e-mail</label>
-          <input
+          <mat-form-field appearance="outline"><mat-label>Adresse e-mail</mat-label><input matInput
             id="email"
             type="email"
             autocomplete="email"
@@ -39,13 +41,12 @@ import { AuthApiService } from './auth-api.service';
             [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
             [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'email-error' : null"
             required
-          />
+          /></mat-form-field>
           @if (form.controls.email.touched && form.controls.email.invalid) {
             <p class="field-error" id="email-error">Saisis une adresse e-mail valide.</p>
           }
 
-          <label for="password">Mot de passe</label>
-          <input
+          <mat-form-field appearance="outline"><mat-label>Mot de passe</mat-label><input matInput
             id="password"
             type="password"
             autocomplete="new-password"
@@ -53,7 +54,7 @@ import { AuthApiService } from './auth-api.service';
             [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
             [attr.aria-describedby]="form.controls.password.touched && form.controls.password.invalid ? 'password-error' : null"
             required
-          />
+          /></mat-form-field>
           @if (form.controls.password.touched && form.controls.password.invalid) {
             <p class="field-error" id="password-error">Le mot de passe doit contenir au moins 6 caractères.</p>
           }
@@ -65,13 +66,13 @@ import { AuthApiService } from './auth-api.service';
             <p class="form-message success-message" role="status">{{ successMessage() }}</p>
           }
 
-          <button class="primary-button" type="submit" [disabled]="loading()">
+          <button mat-flat-button color="primary" type="submit" [disabled]="loading()">
             {{ loading() ? 'Création…' : 'Créer mon compte' }}
           </button>
         </form>
 
         <p class="form-footer">Déjà inscrit ? <a routerLink="/login">Se connecter</a></p>
-      </section>
+      </mat-card-content></mat-card>
     </main>
   `,
   styleUrl: './auth-page.css',

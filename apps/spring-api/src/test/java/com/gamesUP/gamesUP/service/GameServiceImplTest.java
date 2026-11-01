@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,13 +47,14 @@ class GameServiceImplTest {
         game.name = "Catan";
         game.genre = "Stratégie";
         game.editionNumber = 1;
+        game.price = new BigDecimal("29.90");
         game.author = new Author();
         game.author.id = 2L;
         game.author.name = "Auteur";
         game.publisher = new Publisher();
         game.publisher.id = 3L;
         game.publisher.name = "Éditeur";
-        GameDto gameDto = new GameDto(1L, "Catan", "Stratégie", 1,
+        GameDto gameDto = new GameDto(1L, "Catan", "Stratégie", 1, new BigDecimal("29.90"),
                 new AuthorDto(2L, "Auteur"), new PublisherDto(3L, "Éditeur"));
         when(gameRepository.findAll()).thenReturn(List.of(game));
 
@@ -69,7 +71,7 @@ class GameServiceImplTest {
         when(gameRepository.findAll()).thenReturn(List.of(game));
 
         assertThat(service().getAllGames())
-                .containsExactly(new GameDto(1L, "Catan", "Stratégie", 1, null, null));
+                .containsExactly(new GameDto(1L, "Catan", "Stratégie", 1, null, null, null));
     }
 
     @Test
@@ -79,7 +81,7 @@ class GameServiceImplTest {
         when(authorRepository.findById(2L)).thenReturn(Optional.of(author));
         when(publisherRepository.findById(3L)).thenReturn(Optional.of(publisher));
 
-        service().addGame(new CreateGameDto("Catan", "Stratégie", 1, 2L, 3L));
+        service().addGame(new CreateGameDto("Catan", "Stratégie", 1, new BigDecimal("29.90"), 2L, 3L));
 
         ArgumentCaptor<Game> saved = ArgumentCaptor.forClass(Game.class);
         verify(gameRepository).save(saved.capture());
@@ -87,13 +89,14 @@ class GameServiceImplTest {
         assertThat(saved.getValue().name).isEqualTo("Catan");
         assertThat(saved.getValue().genre).isEqualTo("Stratégie");
         assertThat(saved.getValue().editionNumber).isEqualTo(1);
+        assertThat(saved.getValue().price).isEqualByComparingTo("29.90");
         assertThat(saved.getValue().author).isSameAs(author);
         assertThat(saved.getValue().publisher).isSameAs(publisher);
     }
 
     @Test
     void enregistreSansAuteurNiEditeur() {
-        service().addGame(new CreateGameDto("Catan", "Stratégie", 1, null, null));
+        service().addGame(new CreateGameDto("Catan", "Stratégie", 1, BigDecimal.ZERO, null, null));
 
         ArgumentCaptor<Game> saved = ArgumentCaptor.forClass(Game.class);
         verify(gameRepository).save(saved.capture());
@@ -106,7 +109,7 @@ class GameServiceImplTest {
     void refuseUnAuteurInexistant() {
         when(authorRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service().addGame(new CreateGameDto("Catan", "Stratégie", 1, 2L, null)))
+        assertThatThrownBy(() -> service().addGame(new CreateGameDto("Catan", "Stratégie", 1, BigDecimal.ZERO, 2L, null)))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Auteur introuvable");
         verifyNoInteractions(gameRepository);
@@ -116,7 +119,7 @@ class GameServiceImplTest {
     void refuseUnEditeurInexistant() {
         when(publisherRepository.findById(3L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service().addGame(new CreateGameDto("Catan", "Stratégie", 1, null, 3L)))
+        assertThatThrownBy(() -> service().addGame(new CreateGameDto("Catan", "Stratégie", 1, BigDecimal.ZERO, null, 3L)))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Éditeur introuvable");
         verifyNoInteractions(gameRepository);

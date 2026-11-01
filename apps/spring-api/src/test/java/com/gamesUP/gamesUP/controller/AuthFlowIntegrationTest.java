@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.math.BigDecimal;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -129,7 +130,7 @@ class AuthFlowIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Jeu modifié","genre":"Familial","editionNumber":2}
+                                {"name":"Jeu modifié","genre":"Familial","editionNumber":2,"price":24.50}
                                 """))
                 .andExpect(status().isNoContent());
 
@@ -145,7 +146,7 @@ class AuthFlowIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Jeu interdit","genre":"Familial","editionNumber":1}
+                                {"name":"Jeu interdit","genre":"Familial","editionNumber":1,"price":24.50}
                                 """))
                 .andExpect(status().isForbidden());
 
@@ -160,7 +161,7 @@ class AuthFlowIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Jeu admin","genre":"Familial","editionNumber":1}
+                                {"name":"Jeu admin","genre":"Familial","editionNumber":1,"price":24.50}
                                 """))
                 .andExpect(status().isOk());
 
@@ -176,7 +177,7 @@ class AuthFlowIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Tentative","genre":"Familial","editionNumber":2}
+                                {"name":"Tentative","genre":"Familial","editionNumber":2,"price":24.50}
                                 """))
                 .andExpect(status().isForbidden());
 
@@ -279,6 +280,10 @@ class AuthFlowIntegrationTest {
         Number authorId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
         Long id = authorId.longValue();
 
+        mockMvc.perform(get("/authors")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(id));
         mockMvc.perform(put("/authors/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -305,6 +310,10 @@ class AuthFlowIntegrationTest {
         Number publisherId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
         Long id = publisherId.longValue();
 
+        mockMvc.perform(get("/publishers")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(id));
         mockMvc.perform(put("/publishers/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -337,6 +346,10 @@ class AuthFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(savedOrder.id))
                 .andExpect(jsonPath("$.user.email").value("admin.read@example.test"));
+        mockMvc.perform(get("/api/orders")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(savedOrder.id));
 
         String userToken = registerAndLogin("user.read@example.test", Role.ROLE_USER);
         mockMvc.perform(get("/api/users")
@@ -370,47 +383,68 @@ class AuthFlowIntegrationTest {
     }
 
     @Test
-    void unAdministrateurPeutCreerModifierEtSupprimerUneCommandeNonPayee() throws Exception {
-        registerAndLogin("order.owner@example.test", Role.ROLE_USER);
+    void unClientCommandeEtNeVoitQueSesCommandesPuisUnAdminGereLeStatut() throws Exception {
+        String ownerToken = registerAndLogin("order.owner@example.test", Role.ROLE_USER);
         User owner = userRepository.findByEmailIgnoreCase("order.owner@example.test").orElseThrow();
         String adminToken = registerAndLogin("admin.orders@example.test", Role.ROLE_ADMIN);
+        Long adminId = userRepository.findByEmailIgnoreCase("admin.orders@example.test").orElseThrow().getId();
         Game game = createGame();
         String createOrderJson = """
-                {"userId":%d,"lines":[{"gameId":%d,"quantity":2,"unitPrice":12.50}]}
-                """.formatted(owner.getId(), game.id);
+                {"userId":%d,"lines":[{"gameId":%d,"quantity":2,"unitPrice":0.01}]}
+                """.formatted(adminId, game.id);
 
         MvcResult created = mockMvc.perform(post("/api/orders")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createOrderJson))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.lines[0].quantity").value(2))
+                .andExpect(jsonPath("$.lines[0].unitPrice").value(12.50))
+                .andExpect(jsonPath("$.user.email").value("order.owner@example.test"))
                 .andReturn();
         Number orderId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
         Long id = orderId.longValue();
+
+        game.price = new BigDecimal("50.00");
+        gameRepository.save(game);
+
+        mockMvc.perform(get("/api/orders/mine")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(id))
+                .andExpect(jsonPath("$[0].lines[0].unitPrice").value(12.50));
+        mockMvc.perform(get("/api/orders/mine/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+                .andExpect(status().isOk());
+
+        String otherUserToken = registerAndLogin("other.owner@example.test", Role.ROLE_USER);
+        mockMvc.perform(get("/api/orders/mine/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/orders")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(put("/api/orders/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"paid\":true,\"delivered\":false,\"archived\":false,"
                                 + "\"lines\":[{\"gameId\":" + game.id
-                                + ",\"quantity\":3,\"unitPrice\":12.50}]}"))
+                                + ",\"quantity\":3}]}"))
                 .andExpect(status().isNoContent());
         mockMvc.perform(get("/api/orders/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lines[0].quantity").value(3));
+                .andExpect(jsonPath("$.lines[0].quantity").value(3))
+                .andExpect(jsonPath("$.lines[0].unitPrice").value(50.00));
         mockMvc.perform(delete("/api/orders/{id}", id)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isConflict());
 
-        Order removableOrder = new Order();
-        removableOrder.user = owner;
-        removableOrder.createdAt = new Date();
-        Order savedRemovableOrder = orderRepository.save(removableOrder);
-        mockMvc.perform(delete("/api/orders/{id}", savedRemovableOrder.id)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/orders/{id}", id)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+                .andExpect(status().isForbidden());
+        assertThat(orderRepository.findById(id)).isPresent();
     }
 
     @Test
@@ -440,6 +474,7 @@ class AuthFlowIntegrationTest {
         game.name = "Jeu de test";
         game.genre = "Stratégie";
         game.editionNumber = 1;
+        game.price = new java.math.BigDecimal("12.50");
         return gameRepository.save(game);
     }
 

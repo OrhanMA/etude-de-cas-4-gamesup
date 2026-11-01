@@ -34,6 +34,7 @@ public class GameServiceImpl implements GameService {
         game.name = gameDto.name();
         game.genre = gameDto.genre();
         game.editionNumber = gameDto.editionNumber();
+        game.price = gameDto.price();
         if (gameDto.authorId() != null) {
             game.author = authorRepository.findById(gameDto.authorId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Auteur introuvable"));
@@ -80,6 +81,7 @@ public class GameServiceImpl implements GameService {
         game.name = gameDto.name();
         game.genre = gameDto.genre();
         game.editionNumber = gameDto.editionNumber();
+        game.price = gameDto.price();
         game.author = gameDto.authorId() == null
                 ? null
                 : authorRepository.findById(gameDto.authorId())
@@ -100,7 +102,7 @@ public class GameServiceImpl implements GameService {
                 ? null
                 : new PublisherDto(game.publisher.id, game.publisher.name);
 
-        return new GameDto(game.id, game.name, game.genre, game.editionNumber, author, publisher);
+        return new GameDto(game.id, game.name, game.genre, game.editionNumber, game.price, author, publisher);
     }
 
     @Override
