@@ -6,11 +6,13 @@ import com.gamesUP.gamesUP.model.Order;
 import com.gamesUP.gamesUP.model.Publisher;
 import com.gamesUP.gamesUP.model.Role;
 import com.gamesUP.gamesUP.model.User;
+import com.gamesUP.gamesUP.dto.RecommendationDto;
 import com.gamesUP.gamesUP.repository.AuthorRepository;
 import com.gamesUP.gamesUP.repository.GameRepository;
 import com.gamesUP.gamesUP.repository.OrderRepository;
 import com.gamesUP.gamesUP.repository.PublisherRepository;
 import com.gamesUP.gamesUP.repository.UserRepository;
+import com.gamesUP.gamesUP.service.RecommendationService;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:auth-flow;MODE=MySQL;DB_CLOSE_DELAY=-1",
@@ -70,6 +75,9 @@ class AuthFlowIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @MockitoBean
+    private RecommendationService recommendationService;
+
     @Test
     void inscriptionConnexionPuisAccesAvecBearerReussissent() throws Exception {
         mockMvc.perform(post("/api/auth/register")
@@ -103,6 +111,22 @@ class AuthFlowIntegrationTest {
     void refuseUneRequeteAnonymeVersLeCatalogue() throws Exception {
         mockMvc.perform(get("/games"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unClientAuthentifiePeutDemanderSesRecommandations() throws Exception {
+        String email = "reader.recommendations@example.test";
+        String token = registerAndLogin(email, Role.ROLE_USER);
+        when(recommendationService.getRecommendations(email))
+                .thenReturn(new RecommendationDto("knn-hybrid", java.util.List.of()));
+
+        mockMvc.perform(get("/api/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.strategy").value("knn-hybrid"))
+                .andExpect(jsonPath("$.recommendations").isArray());
+
+        verify(recommendationService).getRecommendations(email);
     }
 
     @Test
