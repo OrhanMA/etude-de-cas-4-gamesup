@@ -27,6 +27,7 @@ interface CartItem {
         <a class="brand" routerLink="/catalog">GamesUP</a><span class="toolbar-spacer"></span>
         @if (auth.isAdmin()) { <a mat-button routerLink="/admin">Administration</a> }
         <a mat-button routerLink="/orders">Mes commandes</a>
+        <a mat-button routerLink="/recommendations">Mes recommandations</a>
         <button mat-button type="button" (click)="logout()"><mat-icon>logout</mat-icon> Déconnexion</button>
       </mat-toolbar>
       <section class="catalog-content" aria-labelledby="catalog-title">

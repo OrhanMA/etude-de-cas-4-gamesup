@@ -15,7 +15,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     <main class="orders-layout">
       <mat-toolbar color="primary" class="orders-header"><a class="brand" routerLink="/catalog">GamesUP</a><span class="spacer"></span>
         @if (auth.isAdmin()) { <a mat-button routerLink="/admin">Administration</a> }
-        <a mat-button routerLink="/catalog">Catalogue</a><button mat-button type="button" (click)="logout()"><mat-icon>logout</mat-icon> Déconnexion</button>
+        <a mat-button routerLink="/catalog">Catalogue</a><a mat-button routerLink="/recommendations">Mes recommandations</a><button mat-button type="button" (click)="logout()"><mat-icon>logout</mat-icon> Déconnexion</button>
       </mat-toolbar>
 
       <section class="orders-content" aria-labelledby="orders-title">

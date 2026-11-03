@@ -1,4 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
+/* Définir ici les styles globaux et importer les feuilles partagées. */
 
 @import "tailwindcss";
 @import "@angular/material/prebuilt-themes/azure-blue.css";

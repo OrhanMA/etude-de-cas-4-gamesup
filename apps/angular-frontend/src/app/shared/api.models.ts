@@ -67,3 +67,13 @@ export interface UpdateOrderRequest {
   archived: boolean;
   lines?: SaveOrderLine[];
 }
+
+export interface RecommendedGame {
+  game: Game;
+  score: number;
+}
+
+export interface RecommendationResponse {
+  strategy: 'knn-hybrid' | 'cold-start' | 'no-candidates';
+  recommendations: RecommendedGame[];
+}

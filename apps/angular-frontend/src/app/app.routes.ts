@@ -28,6 +28,11 @@ export const routes: Routes = [
     loadComponent: () => import('./orders/orders-page').then((module) => module.OrdersPage),
   },
   {
+    path: 'recommendations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./catalog/recommendations-page').then((module) => module.RecommendationsPage),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./admin/admin-shell').then((module) => module.AdminShell),
