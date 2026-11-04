@@ -2,6 +2,8 @@
 
 Plateforme de vente de jeux de société réalisée pour l'étude de cas GamesUP. Le dépôt contient trois applications :
 
+**Dépôt GitHub :** [github.com/OrhanMA/etude-de-cas-4-gamesup](https://github.com/OrhanMA/etude-de-cas-4-gamesup)
+
 - `apps/spring-api` : API REST Java 21 / Spring Boot, Hibernate/JPA, MySQL et authentification JWT avec rôles client et administrateur.
 - `apps/python-api` : API FastAPI qui calcule les recommandations avec un KNN hybride basé sur les achats et les caractéristiques des jeux.
 - `apps/angular-frontend` : application Angular pour le catalogue, les commandes et l'administration.
