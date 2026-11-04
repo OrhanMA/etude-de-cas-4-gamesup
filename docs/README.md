@@ -1,12 +1,14 @@
 # Documentation GamesUP
 
-Ces fichiers sont des supports à compléter au fur et à mesure du développement. Ils ne constituent pas encore la documentation finale.
+Ce dossier présente l'architecture réalisée, les choix de conception, le système de recommandation, les résultats des vérifications et la procédure pour installer et lancer le projet.
 
 - [Architecture et diagrammes](architecture.md)
-- [Conception et pratiques de développement](conception.md)
+- [Conception, sécurité et principes SOLID](conception.md)
 - [Tests et couverture](tests.md)
-- [Outils et commandes de test](outils.md)
-- [Recommandation et apprentissage automatique](recommandation.md)
-- [Bilan de la démarche](bilan.md)
+- [Installation, initialisation et commandes](outils.md)
+- [Recommandation hybride KNN](recommandation.md)
+- [Bilan des pratiques, limites et évolutions](bilan.md)
 
-Placer les sources et exports des diagrammes dans `diagrammes/`. Conserver les rapports de couverture générés hors du dépôt et indiquer dans `tests.md` comment les reproduire.
+Les exports et leur [source Excalidraw modifiable](diagrammes/diagrammes-gamesup.excalidraw) sont conservés dans [diagrammes](diagrammes/).
+
+Les rapports de couverture et artefacts générés sont reproductibles localement et exclus du dépôt par `.gitignore`.

@@ -1,61 +1,27 @@
-# AngularFrontend
+# Application Angular GamesUP
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
+Interface web pour l'inscription/connexion, la recherche et la consultation du catalogue, la création de commandes, l'historique client et les écrans d'administration. Les composants sont standalone et les fonctionnalités sont chargées par routes. Angular Material fournit les contrôles principaux.
 
-## Development server
+## Installation et lancement
 
-Start the Spring API on `http://localhost:8080`, then start Angular from this directory:
-
-```bash
+```sh
+npm ci
 npm start
 ```
 
-Open `http://localhost:4200/`. The development proxy forwards `/api` and `/games` requests to Spring, so the browser uses the same origin and does not need a separate CORS configuration. The access token is held in memory and is cleared when the page reloads or when you sign out.
+Avant cela, démarrer l'API Spring sur `http://localhost:8080`. Le proxy déclaré dans `proxy.conf.json` transmet les routes API Spring au backend. Le navigateur ne contacte pas FastAPI directement. Ouvrir ensuite `http://localhost:4200`.
 
-The client area provides `/register`, `/login`, a searchable `/catalog`, game details, and `/orders`. The protected `/admin` area provides game, client, order, author, and publisher management. Admin screens are guarded in Angular for navigation and protected again by Spring Security on the API. In production, configure the hosting server to forward `/api`, `/games`, `/authors`, and `/publishers` to Spring.
+Parcours disponibles : `/register`, `/login`, `/catalog`, `/catalog/game/:id`, `/orders`, `/recommendations` et `/admin` (jeux, référentiels, clients et commandes). Les gardes Angular contrôlent la navigation et Spring applique les autorisations définitives. Le jeton JWT est gardé uniquement en mémoire et disparaît au rechargement ou à la déconnexion. La page de recommandations appelle uniquement la route Spring ; Spring reste le seul composant qui appelle FastAPI.
 
-## Code scaffolding
+## Tests et compilation
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```sh
+npm test -- --watch=false
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Vitest exécute les tests des guards, services HTTP et parcours du catalogue. Aucun seuil de couverture Angular n'est configuré. La vérification fonctionnelle complète nécessite MySQL et Spring ; la recommandation demande aussi FastAPI disponible.
 
-```bash
-ng generate --help
-```
+## Configuration de production
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Le serveur qui héberge Angular doit transmettre `/api`, `/games`, `/authors` et `/publishers` à Spring (ou adapter le proxy selon l'environnement). Les variables et identifiants de backend ne doivent pas être intégrés au bundle Angular. Le contrôle d'accès se fait côté Spring ; les guards frontend ne constituent pas une frontière de sécurité.
